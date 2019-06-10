@@ -11,6 +11,7 @@ def sign(x):
 
 
 print(ts.__version__)
+print(pd.__file__)
 
 STK = ts.get_hist_data('600839')
 
@@ -39,13 +40,13 @@ for i in range(_n,len(STK)):
 
     # _EMA =
 
-    _MOM = _C.head(1) - _C.tail(1)    #MOM
+    _MOM = (_C.head(1).to_numpy() - _C.tail(1).to_numpy())[0]    #MOM
 
     _H = STK.iloc[i-_n+1:i+1]['high']
     _L = STK.iloc[i-_n+1:i+1]['low']
     _HH = _H.sort_values(ascending=False)[0]
     _LL = _L.sort_values(ascending=True)[0]
-    _STCK = (_C.tail(1)-_LL)/(_HH-_LL)*100   #STCK
+    _STCK = ((_C.tail(1)-_LL)/(_HH-_LL)*100).to_numpy()[0]   #STCK
     # print(_STCK)
 
     if i >= _n*2:
@@ -66,21 +67,33 @@ for i in range(_n,len(STK)):
         _MACD = _MACD + 2/(10+1)*(_DIFF-_MACD)      #MACD
 
     _priceChanges = STK.iloc[i-_n+1:i+1]['price_change']
-    _UPSUM = sum(_priceChanges[_priceChanges>0])
-    _DWSUM = -sum(_priceChanges[_priceChanges<=0])
+    _UP, _DW = _priceChanges.copy(), _priceChanges.copy()
+    _UP[_UP<0]=0
+    _DW[_DW>0]=0
+    _UPSUM = pd.stats.moments.ewma(_UP, _n)
+    _DWSUM = pd.stats.moments.ewma(_DW.abs(), _n)
     _RSI = 100 - 100/(1+(_UPSUM/_n)/(_DWSUM/_n))    #RSI
 
-    _WILLR = (_HH - _C.tail(1))/(_HH - _LL) * 100    #WILLR
+    _WILLR = ((_HH - _C.tail(1))/(_HH - _LL) * 100).to_numpy()[0]    #WILLR
 
-    _ADO = (2*_C.tail(1) - _H.tail(1) - _L.tail(1)) / (_H.tail(1) - _L.tail(1))  #ADO
+    _ADO = ((2*_C.tail(1) - _H.tail(1) - _L.tail(1)) / (_H.tail(1) - _L.tail(1))).to_numpy()[0]  #ADO
 
     _M = (_H.to_numpy()+_L.to_numpy()+_C.to_numpy())/3
     _SM = sum(_M)/_n
     _D = sum(abs(_M-_SM))/_n
-    _CCI = (_M.tail(1) - _SM) / (0.015*_D)
+    _CCI = (_M[-1] - _SM) / (0.015*_D)
 
-    _Feature=np.ndarray([_SMA, _WMA, _MOM, _STCK, _STCD, _MACD, _RSI, _WILLR, _ADO, _CCI])
-    i_Features[i-_n]=_Feature
+    i_Features[i-_n, 0]=_SMA
+    i_Features[i-_n, 1]=_WMA
+    i_Features[i-_n, 2]=_MOM
+    i_Features[i-_n, 3]=_STCK
+    i_Features[i-_n, 4]=_STCD
+    i_Features[i-_n, 5]=_MACD
+    i_Features[i-_n, 6]=_RSI
+    i_Features[i-_n, 7]=_WILLR
+    i_Features[i-_n, 8]=_ADO
+    i_Features[i-_n, 9]=_CCI
+
 
 print(o_UpDown)
 
