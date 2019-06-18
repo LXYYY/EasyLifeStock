@@ -4,10 +4,6 @@ from sklearn.ensemble import RandomForestClassifier as rf
 from sklearn.datasets import make_classification
 from sklearn import preprocessing as prep
 
-testx, testy=make_classification(n_samples=1000, n_features=4,
-                           n_informative=2, n_redundant=0,
-                           random_state=0, shuffle=False)
-
 i_Features=np.load("600839_i.npy")
 o_UpDown=np.load("600839_o.npy")
 
